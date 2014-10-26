@@ -20,6 +20,8 @@ struct Whirlpool
 	void start()
 	{
 		bufferPos = 0;
+		hash[] = 0;
+		bitLength[] = 0;
 	}
 
 	void put(scope const(ubyte)[] data...)
@@ -398,6 +400,18 @@ unittest
 		"1FC15490EDDC47AF32BB2B66C34FF9AD8C6008AD677F77126953B226E4ED8B01");
 }
 
+pure nothrow @nogc
+unittest
+{
+	Whirlpool wp;
+	wp.put(cast(ubyte[])"abc");
+	wp.start();
+	wp.put(cast(ubyte[])"abc");
+	assert(wp.finish() ==
+		x"4E2448A4C6F486BB16B6562C73B4020BF3043E3A731BCE721AE1B303D97E6D4C" ~
+		x"7181EEBDB6C57E277D0E34957114CBD6C797FC9D95D8B582D225292076D4EEF5");
+}
+
 
 /// Convenience alias for digest function in std.digest.digest.
 auto whirlpoolOf(T...)(T datas)
@@ -410,7 +424,6 @@ alias WhirlpoolDigest = WrapperDigest!Whirlpool;
 
 
 private:
-
 
 // number of rounds
 immutable int R = 10;
