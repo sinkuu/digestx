@@ -77,7 +77,6 @@ struct Whirlpool
 		}
 
 		if (bufferPos < 32) buffer[bufferPos .. 32] = 0;
-
 		buffer[32 .. $] = bitLength;
 		bufferPos = buffer.length;
 		processBuffer();
@@ -137,170 +136,20 @@ private:
 		state[] = block[] ^ K[];
 
 		// iterate over all rounds
-		foreach (r; 1 .. R + 1)
+		foreach (immutable rcr; rc[1 .. $])
 		{
-			ulong[8] L;
+			ulong[8] L = void;
 
 			// compute K^r from K^{r-1}
-			L[0] =
-				C[0][(K[0] >> 56)       ] ^
-				C[1][(K[7] >> 48) & 0xff] ^
-				C[2][(K[6] >> 40) & 0xff] ^
-				C[3][(K[5] >> 32) & 0xff] ^
-				C[4][(K[4] >> 24) & 0xff] ^
-				C[5][(K[3] >> 16) & 0xff] ^
-				C[6][(K[2] >>  8) & 0xff] ^
-				C[7][(K[1]      ) & 0xff] ^
-				rc[r];
-			L[1] =
-				C[0][(K[1] >> 56)       ] ^
-				C[1][(K[0] >> 48) & 0xff] ^
-				C[2][(K[7] >> 40) & 0xff] ^
-				C[3][(K[6] >> 32) & 0xff] ^
-				C[4][(K[5] >> 24) & 0xff] ^
-				C[5][(K[4] >> 16) & 0xff] ^
-				C[6][(K[3] >>  8) & 0xff] ^
-				C[7][(K[2]      ) & 0xff];
-			L[2] =
-				C[0][(K[2] >> 56)       ] ^
-				C[1][(K[1] >> 48) & 0xff] ^
-				C[2][(K[0] >> 40) & 0xff] ^
-				C[3][(K[7] >> 32) & 0xff] ^
-				C[4][(K[6] >> 24) & 0xff] ^
-				C[5][(K[5] >> 16) & 0xff] ^
-				C[6][(K[4] >>  8) & 0xff] ^
-				C[7][(K[3]      ) & 0xff];
-			L[3] =
-				C[0][(K[3] >> 56)       ] ^
-				C[1][(K[2] >> 48) & 0xff] ^
-				C[2][(K[1] >> 40) & 0xff] ^
-				C[3][(K[0] >> 32) & 0xff] ^
-				C[4][(K[7] >> 24) & 0xff] ^
-				C[5][(K[6] >> 16) & 0xff] ^
-				C[6][(K[5] >>  8) & 0xff] ^
-				C[7][(K[4]      ) & 0xff];
-			L[4] =
-				C[0][(K[4] >> 56)       ] ^
-				C[1][(K[3] >> 48) & 0xff] ^
-				C[2][(K[2] >> 40) & 0xff] ^
-				C[3][(K[1] >> 32) & 0xff] ^
-				C[4][(K[0] >> 24) & 0xff] ^
-				C[5][(K[7] >> 16) & 0xff] ^
-				C[6][(K[6] >>  8) & 0xff] ^
-				C[7][(K[5]      ) & 0xff];
-			L[5] =
-				C[0][(K[5] >> 56)       ] ^
-				C[1][(K[4] >> 48) & 0xff] ^
-				C[2][(K[3] >> 40) & 0xff] ^
-				C[3][(K[2] >> 32) & 0xff] ^
-				C[4][(K[1] >> 24) & 0xff] ^
-				C[5][(K[0] >> 16) & 0xff] ^
-				C[6][(K[7] >>  8) & 0xff] ^
-				C[7][(K[6]      ) & 0xff];
-			L[6] =
-				C[0][(K[6] >> 56)       ] ^
-				C[1][(K[5] >> 48) & 0xff] ^
-				C[2][(K[4] >> 40) & 0xff] ^
-				C[3][(K[3] >> 32) & 0xff] ^
-				C[4][(K[2] >> 24) & 0xff] ^
-				C[5][(K[1] >> 16) & 0xff] ^
-				C[6][(K[0] >>  8) & 0xff] ^
-				C[7][(K[7]      ) & 0xff];
-			L[7] =
-				C[0][(K[7] >> 56)       ] ^
-				C[1][(K[6] >> 48) & 0xff] ^
-				C[2][(K[5] >> 40) & 0xff] ^
-				C[3][(K[4] >> 32) & 0xff] ^
-				C[4][(K[3] >> 24) & 0xff] ^
-				C[5][(K[2] >> 16) & 0xff] ^
-				C[6][(K[1] >>  8) & 0xff] ^
-				C[7][(K[0]      ) & 0xff];
+			mixin(genTransform("L", "K"));
+			L[0] ^= rcr;
 
 			K = L;
 
 			// apply the r-th round transformation
-			L[0] =
-				C[0][(state[0] >> 56)       ] ^
-				C[1][(state[7] >> 48) & 0xff] ^
-				C[2][(state[6] >> 40) & 0xff] ^
-				C[3][(state[5] >> 32) & 0xff] ^
-				C[4][(state[4] >> 24) & 0xff] ^
-				C[5][(state[3] >> 16) & 0xff] ^
-				C[6][(state[2] >>  8) & 0xff] ^
-				C[7][(state[1]      ) & 0xff] ^
-				K[0];
-			L[1] =
-				C[0][(state[1] >> 56)       ] ^
-				C[1][(state[0] >> 48) & 0xff] ^
-				C[2][(state[7] >> 40) & 0xff] ^
-				C[3][(state[6] >> 32) & 0xff] ^
-				C[4][(state[5] >> 24) & 0xff] ^
-				C[5][(state[4] >> 16) & 0xff] ^
-				C[6][(state[3] >>  8) & 0xff] ^
-				C[7][(state[2]      ) & 0xff] ^
-				K[1];
-			L[2] =
-				C[0][(state[2] >> 56)       ] ^
-				C[1][(state[1] >> 48) & 0xff] ^
-				C[2][(state[0] >> 40) & 0xff] ^
-				C[3][(state[7] >> 32) & 0xff] ^
-				C[4][(state[6] >> 24) & 0xff] ^
-				C[5][(state[5] >> 16) & 0xff] ^
-				C[6][(state[4] >>  8) & 0xff] ^
-				C[7][(state[3]      ) & 0xff] ^
-				K[2];
-			L[3] =
-				C[0][(state[3] >> 56)       ] ^
-				C[1][(state[2] >> 48) & 0xff] ^
-				C[2][(state[1] >> 40) & 0xff] ^
-				C[3][(state[0] >> 32) & 0xff] ^
-				C[4][(state[7] >> 24) & 0xff] ^
-				C[5][(state[6] >> 16) & 0xff] ^
-				C[6][(state[5] >>  8) & 0xff] ^
-				C[7][(state[4]      ) & 0xff] ^
-				K[3];
-			L[4] =
-				C[0][(state[4] >> 56)       ] ^
-				C[1][(state[3] >> 48) & 0xff] ^
-				C[2][(state[2] >> 40) & 0xff] ^
-				C[3][(state[1] >> 32) & 0xff] ^
-				C[4][(state[0] >> 24) & 0xff] ^
-				C[5][(state[7] >> 16) & 0xff] ^
-				C[6][(state[6] >>  8) & 0xff] ^
-				C[7][(state[5]      ) & 0xff] ^
-				K[4];
-			L[5] =
-				C[0][(state[5] >> 56)       ] ^
-				C[1][(state[4] >> 48) & 0xff] ^
-				C[2][(state[3] >> 40) & 0xff] ^
-				C[3][(state[2] >> 32) & 0xff] ^
-				C[4][(state[1] >> 24) & 0xff] ^
-				C[5][(state[0] >> 16) & 0xff] ^
-				C[6][(state[7] >>  8) & 0xff] ^
-				C[7][(state[6]      ) & 0xff] ^
-				K[5];
-			L[6] =
-				C[0][(state[6] >> 56)       ] ^
-				C[1][(state[5] >> 48) & 0xff] ^
-				C[2][(state[4] >> 40) & 0xff] ^
-				C[3][(state[3] >> 32) & 0xff] ^
-				C[4][(state[2] >> 24) & 0xff] ^
-				C[5][(state[1] >> 16) & 0xff] ^
-				C[6][(state[0] >>  8) & 0xff] ^
-				C[7][(state[7]      ) & 0xff] ^
-				K[6];
-			L[7] =
-				C[0][(state[7] >> 56)       ] ^
-				C[1][(state[6] >> 48) & 0xff] ^
-				C[2][(state[5] >> 40) & 0xff] ^
-				C[3][(state[4] >> 32) & 0xff] ^
-				C[4][(state[3] >> 24) & 0xff] ^
-				C[5][(state[2] >> 16) & 0xff] ^
-				C[6][(state[1] >>  8) & 0xff] ^
-				C[7][(state[0]      ) & 0xff] ^
-				K[7];
+			mixin(genTransform("L", "state"));
 
-			state = L;
+			state[] = L[] ^ K[];
 		}
 
 		// apply the Miyaguchi-Preneel compression function:
@@ -424,6 +273,25 @@ alias WhirlpoolDigest = WrapperDigest!Whirlpool;
 
 
 private:
+
+string genTransform(string assignTo, string from)
+{
+	import std.string : format;
+
+	string ret;
+	foreach (i; 0 .. 8)
+	{
+		ret ~= format("%s[%s]=", assignTo, i);
+		for (int t = 0, s = 56; t < 8; t++, s -= 8)
+		{
+			ret ~= format("C[%s][(%s[%s] >> %s) & 0xFF]", t, from, (i - t) & 7, s);
+			if (t != 7) ret ~= "^";
+		}
+		ret ~= ";\n";
+	}
+	return ret;
+}
+
 
 // number of rounds
 immutable int R = 10;
