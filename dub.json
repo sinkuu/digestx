@@ -1,4 +1,5 @@
 {
 	"name": "digestx",
-	"description": "Extends std.digest"
+	"description": "Additional hash algorithms with APIs conforming to std.digest",
+	"targetType": "library"
 }

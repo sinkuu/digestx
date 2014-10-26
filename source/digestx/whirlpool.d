@@ -1,7 +1,7 @@
 /**
 The Whirlpool hashing algorithm implementation. This module conforms to the APIs defined in Phobos' std.digest.digest.
 
-Based on the original Whirlpool implementation by Paulo S.L.M. Barreto and Vincent Rijmen.
+Ported from the original Whirlpool implementation by Paulo S.L.M. Barreto and Vincent Rijmen.
   */
 module digestx.whirlpool;
 
@@ -23,9 +23,12 @@ struct Whirlpool
 	}
 
 	void put(scope const(ubyte)[] data...)
+	in
 	{
-		assert(data.length < ulong.max / 4);
-
+		assert(data.length < ulong.max / 8);
+	}
+	body
+	{
 		ulong value = data.length * 8;
 		for (int i = 31, carry = 0; i >= 0; i--)
 		{
@@ -329,7 +332,10 @@ unittest
 ///
 unittest
 {
+	import digestx.whirlpool;
+
 	// OOP API
+
 	auto wp = new WhirlpoolDigest;
 	ubyte[] hash = wp.digest("abc");
 	assert(toHexString(hash) == "4E2448A4C6F486BB16B6562C73B4020BF3043E3A731BCE721AE1B303D97E6D4C" ~
@@ -379,15 +385,17 @@ unittest
 	assert(hexDigest!Whirlpool("abcdbcdecdefdefgefghfghighijhijk") ==
 		"2A987EA40F917061F5D6F0A0E4644F488A7A5A52DEEE656207C562F988E95C69" ~
 		"16BDC8031BC5BE1B7B947639FE050B56939BAAA0ADFF9AE6745B7B181C3BE3FD");
+}
 
-	version (none)
-	{
+version (none)
+@safe pure nothrow
+unittest
+{
 	import std.array : array;
 	import std.range : repeat, take;
 	assert(hexDigest!Whirlpool(repeat('a').take(10 ^^ 6).array) ==
 		"0C99005BEB57EFF50A7CF005560DDF5D29057FD86B20BFD62DECA0F1CCEA4AF5" ~
 		"1FC15490EDDC47AF32BB2B66C34FF9AD8C6008AD677F77126953B226E4ED8B01");
-	}
 }
 
 
