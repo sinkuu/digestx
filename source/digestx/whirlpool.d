@@ -65,7 +65,7 @@ struct Whirlpool
 	ubyte[64] finish()
 	{
 		// append a '1'-bit
-		// As buffer is byte-wise in this implementation, do not perform bit-op
+		// As buffer is byte-wise in this implementation, no need to perform bit-op
 		buffer[bufferPos] = 0x80;
 		bufferPos++;
 
@@ -82,11 +82,11 @@ struct Whirlpool
 		bufferPos = buffer.length;
 		processBuffer();
 
-		ubyte[64] digest;
+		ubyte[64] digest = void;
 
 		for (int i = 0, j = 0; i < 8; i++, j += 8)
 		{
-			auto h = hash[i];
+			immutable h = hash[i];
 			digest[j    ] = cast(ubyte)(h >> 56);
 			digest[j + 1] = cast(ubyte)(h >> 48);
 			digest[j + 2] = cast(ubyte)(h >> 40);
@@ -133,7 +133,7 @@ private:
 
 		// compute and apply K^0 to the cipher state
 		ulong[8] K = hash;
-		ulong[8] state;
+		ulong[8] state = void;
 		state[] = block[] ^ K[];
 
 		// iterate over all rounds
