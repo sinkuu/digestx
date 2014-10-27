@@ -1,6 +1,6 @@
 /**
- * FNV(Fowler-Noll-Vo) hash implementation.
- */
+FNV(Fowler-Noll-Vo) hash implementation. This module conforms to the APIs defined in std.digest.digest.
+*/
 module digestx.fnv;
 
 

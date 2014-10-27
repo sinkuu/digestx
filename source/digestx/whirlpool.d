@@ -1,8 +1,8 @@
 /**
-The Whirlpool hashing algorithm implementation. This module conforms to the APIs defined in Phobos' std.digest.digest.
+Whirlpool hashing algorithm implementation. This module conforms to the APIs defined in std.digest.digest.
 
-Ported from the original Whirlpool implementation by Paulo S.L.M. Barreto and Vincent Rijmen.
-  */
+Based on the original Whirlpool implementation by Paulo S.L.M. Barreto and Vincent Rijmen.
+*/
 module digestx.whirlpool;
 
 
@@ -14,10 +14,7 @@ public import std.digest.digest;
   */
 struct Whirlpool
 {
-
-@trusted pure nothrow @nogc:
-
-	void start()
+	void start() @safe pure nothrow @nogc
 	{
 		bufferPos = 0;
 		hash[] = 0;
@@ -25,7 +22,7 @@ struct Whirlpool
 		bitLength[] = 0;
 	}
 
-	void put(scope const(ubyte)[] data...)
+	void put(scope const(ubyte)[] data...) @trusted pure nothrow @nogc
 	in
 	{
 		assert(data.length < ulong.max / 8);
@@ -63,7 +60,7 @@ struct Whirlpool
 		}
 	}
 
-	ubyte[64] finish()
+	ubyte[64] finish() @trusted pure nothrow @nogc
 	{
 		// append a '1'-bit
 		// As buffer is byte-wise in this implementation, no need to perform bit-op
@@ -113,7 +110,7 @@ private:
 
 	bool firstBlock = true;
 
-	void processBuffer()
+	void processBuffer() @trusted pure nothrow @nogc
 	{
 		assert(bufferPos == 64);
 
@@ -153,7 +150,7 @@ private:
 		{
 			ulong[8] K = hash;
 
-			foreach (immutable rcr; rc[1 .. $])
+			foreach (immutable rcr; rc)
 			{
 				ulong[8] L = void;
 
@@ -177,13 +174,19 @@ private:
 	}
 }
 
+/// Convenience alias for digest function in std.digest.digest using the Whirlpool implementation.
+auto whirlpoolOf(T...)(T datas)
+{
+	return digest!(Whirlpool, T)(datas);
+}
+
+/// OOP API for Whirlpool
+alias WhirlpoolDigest = WrapperDigest!Whirlpool;
+
 ///
-@safe pure nothrow @nogc
 unittest
 {
 	import digestx.whirlpool;
-
-	// Template API
 
 	ubyte[1024] data;
 	Whirlpool wp;
@@ -193,21 +196,17 @@ unittest
 	wp.put(data[]);
 	ubyte[64] hash = wp.finish();
 
-	hash = whirlpoolOf("abc");
-	assert(digest!Whirlpool("abc") == hash);
-	assert(hexDigest!Whirlpool("abc") == toHexString(hash));
-}
+	// Template API
 
-///
-unittest
-{
-	import digestx.whirlpool;
+	ubyte[64] hash2 = whirlpoolOf("abc");
+	assert(digest!Whirlpool("abc") == hash2);
+	assert(hexDigest!Whirlpool("abc") == toHexString(hash2));
 
 	// OOP API
 
-	auto wp = new WhirlpoolDigest;
-	ubyte[] hash = wp.digest("abc");
-	assert(toHexString(hash) == "4E2448A4C6F486BB16B6562C73B4020BF3043E3A731BCE721AE1B303D97E6D4C" ~
+	Digest wpDigest = new WhirlpoolDigest;
+	ubyte[] hash3 = wpDigest.digest("abc");
+	assert(toHexString(hash3) == "4E2448A4C6F486BB16B6562C73B4020BF3043E3A731BCE721AE1B303D97E6D4C" ~
 		"7181EEBDB6C57E277D0E34957114CBD6C797FC9D95D8B582D225292076D4EEF5");
 }
 
@@ -256,7 +255,6 @@ unittest
 		"16BDC8031BC5BE1B7B947639FE050B56939BAAA0ADFF9AE6745B7B181C3BE3FD");
 }
 
-version (none)
 pure nothrow @nogc
 unittest
 {
@@ -266,27 +264,19 @@ unittest
 		x"1FC15490EDDC47AF32BB2B66C34FF9AD8C6008AD677F77126953B226E4ED8B01");
 }
 
-pure nothrow @nogc
+@safe pure nothrow @nogc
 unittest
 {
+	import std.string : representation;
+
 	Whirlpool wp;
-	wp.put(cast(ubyte[])"abc");
+	wp.put(representation("abc"));
 	wp.start();
-	wp.put(cast(ubyte[])"abc");
+	wp.put(representation("abc"));
 	assert(wp.finish() ==
 		x"4E2448A4C6F486BB16B6562C73B4020BF3043E3A731BCE721AE1B303D97E6D4C" ~
 		x"7181EEBDB6C57E277D0E34957114CBD6C797FC9D95D8B582D225292076D4EEF5");
 }
-
-
-/// Convenience alias for digest function in std.digest.digest.
-auto whirlpoolOf(T...)(T datas)
-{
-	return digest!(Whirlpool, T)(datas);
-}
-
-
-alias WhirlpoolDigest = WrapperDigest!Whirlpool;
 
 
 private:
@@ -837,8 +827,7 @@ immutable ulong[256][8] C = [[
 	0x28a0285d88507528UL, 0x5c6d5cda31b8865cUL, 0xf8c7f8933fed6bf8UL, 0x86228644a411c286UL,
 ]];
 
-immutable ulong[R + 1] rc = [
-	0x0000000000000000UL,
+immutable ulong[R] rc = [
 	0x1823c6e887b8014fUL,
 	0x36a6d2f5796f9152UL,
 	0x60bc9b8ea30c7b35UL,
@@ -851,16 +840,26 @@ immutable ulong[R + 1] rc = [
 	0xca2dbf07ad5a8333UL,
 ];
 
-// precomputed based on the initial state
+// precomputed K[] based on the initial state
 immutable ulong[8][R] pcK = [
-	[0x300BEEC0AF902967, 0x2828282828282828, 0x2828282828282828, 0x2828282828282828, 0x2828282828282828, 0x2828282828282828, 0x2828282828282828, 0x2828282828282828],
-	[0x3BAB89F8EAD1AE24, 0x4445456645E9CBAF, 0x70FEA4A4C5A4B289, 0xC5FAA9E1E1CCE1A0, 0x48ACC05CFCFCB8FC, 0x8FF70E26908F8F69, 0x96791407D7857979, 0xF8A8F868B8C878F8],
-	[0xD319BFDB30467058, 0x295B23D1AFCF37DB, 0x12C8AC28B95AC98, 0x81639EB1C0B206A7, 0x445E607AB0B209DB, 0x735B2CCFBC8CBC71, 0xDC670924EFEDDDD3, 0x7B8D3BF0D73B7D19],
-	[0x38BEAAC1DE116586, 0x687CF3D04A87337F, 0xF337FADB98ADF057, 0xC5E24258EE358DBC, 0x1109F0E8996E247E, 0x1C5D6ED10B03401, 0xFBC952F17B28ECD3, 0x3256DC0CC7F12740],
-	[0xAF25A520949BCF14, 0xC13626A9E3C4534D, 0xE60F7D867740F9E1, 0x915DE6BBE26A0629, 0x965A54CC4CFE5E8D, 0xBEE931CB62323AA6, 0xB17B591896846A47, 0xD4F0C9362759AF31],
-	[0xE2F9B5C025370BB0, 0x392BCBA2168494A5, 0x608AF8CEFA348C14, 0x7AA53764418C9219, 0xB3F346A1FA833F89, 0x97493F487802CF7C, 0xDCADE8BA1E008F23, 0x92774F49EDB0323D],
-	[0x75416382774DFF2F, 0xFFFA38D055034600, 0xBF7D02493E98F361, 0xF4A860C29AE5CE0B, 0xC8DF5A44EE5D9D27, 0x23F45A55047500A4, 0xB016101202F9E28C, 0xAC30CD296833331D],
-	[0x36BF1826884AD89, 0x9940C662D8467163, 0x4C433E174B19C210, 0xE29CCFD34CFF86C5, 0x21FF11A042DF2653, 0x1B8E00CB6CE44B13, 0xA6123BF7A347B7CE, 0xD918900E3B2833CA],
-	[0xD01C677A0A9A2CF9, 0x2A942F534A63B6B2, 0x88422246FEACA8B4, 0x474A5CC73D583559, 0x74A6925DA55C6FA1, 0x7717E68CC4735C39, 0x82A3B0B53EC1AC6, 0x2AF658EB814DE762],
-	[0x489548B601EEBC3A, 0xA50D6BC66BED8E81, 0xE0CE3DCF88265A75, 0xC28C4ADBC0F69CE9, 0x54B79CD57F718513, 0x43414B8A977D0B7B, 0x631935BBDBF6157A, 0x6A7A4EF637018227],
+	[0x300BEEC0AF902967, 0x2828282828282828, 0x2828282828282828, 0x2828282828282828,
+	0x2828282828282828, 0x2828282828282828, 0x2828282828282828, 0x2828282828282828],
+	[0x3BAB89F8EAD1AE24, 0x4445456645E9CBAF, 0x70FEA4A4C5A4B289, 0xC5FAA9E1E1CCE1A0,
+	0x48ACC05CFCFCB8FC, 0x8FF70E26908F8F69, 0x96791407D7857979, 0xF8A8F868B8C878F8],
+	[0xD319BFDB30467058, 0x295B23D1AFCF37DB, 0x12C8AC28B95AC98, 0x81639EB1C0B206A7,
+	0x445E607AB0B209DB, 0x735B2CCFBC8CBC71, 0xDC670924EFEDDDD3, 0x7B8D3BF0D73B7D19],
+	[0x38BEAAC1DE116586, 0x687CF3D04A87337F, 0xF337FADB98ADF057, 0xC5E24258EE358DBC,
+	0x1109F0E8996E247E, 0x1C5D6ED10B03401, 0xFBC952F17B28ECD3, 0x3256DC0CC7F12740],
+	[0xAF25A520949BCF14, 0xC13626A9E3C4534D, 0xE60F7D867740F9E1, 0x915DE6BBE26A0629,
+	0x965A54CC4CFE5E8D, 0xBEE931CB62323AA6, 0xB17B591896846A47, 0xD4F0C9362759AF31],
+	[0xE2F9B5C025370BB0, 0x392BCBA2168494A5, 0x608AF8CEFA348C14, 0x7AA53764418C9219,
+	0xB3F346A1FA833F89, 0x97493F487802CF7C, 0xDCADE8BA1E008F23, 0x92774F49EDB0323D],
+	[0x75416382774DFF2F, 0xFFFA38D055034600, 0xBF7D02493E98F361, 0xF4A860C29AE5CE0B,
+	0xC8DF5A44EE5D9D27, 0x23F45A55047500A4, 0xB016101202F9E28C, 0xAC30CD296833331D],
+	[0x36BF1826884AD89, 0x9940C662D8467163, 0x4C433E174B19C210, 0xE29CCFD34CFF86C5,
+	0x21FF11A042DF2653, 0x1B8E00CB6CE44B13, 0xA6123BF7A347B7CE, 0xD918900E3B2833CA],
+	[0xD01C677A0A9A2CF9, 0x2A942F534A63B6B2, 0x88422246FEACA8B4, 0x474A5CC73D583559,
+	0x74A6925DA55C6FA1, 0x7717E68CC4735C39, 0x82A3B0B53EC1AC6, 0x2AF658EB814DE762],
+	[0x489548B601EEBC3A, 0xA50D6BC66BED8E81, 0xE0CE3DCF88265A75, 0xC28C4ADBC0F69CE9,
+	0x54B79CD57F718513, 0x43414B8A977D0B7B, 0x631935BBDBF6157A, 0x6A7A4EF637018227],
 ];

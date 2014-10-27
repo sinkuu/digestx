@@ -1,20 +1,10 @@
 /**
-Adler-32 implementation.
+Adler-32 implementation. This module conforms to the APIs defined in std.digest.digest.
 */
 module digestx.adler;
 
 
 public import std.digest.digest;
-import std.algorithm;
-
-
-/**
-Convenience alias for $(D digest) in std.digest.digest using the Adler32 implementation
-*/
-auto adler32Of(T...)(T data)
-{
-	return digest!(Adler32, T)(data);
-}
 
 
 struct Adler32
@@ -70,6 +60,15 @@ private:
 	uint _tlen = 5550;
 }
 
+//Convenience alias for $(D digest) function in std.digest.digest using the Adler32 implementation.
+auto adler32Of(T...)(T data)
+{
+	return digest!(Adler32, T)(data);
+}
+
+/// OOP API for Adler32.
+alias Adler32Digest = WrapperDigest!Adler32;
+
 ///
 unittest
 {
@@ -98,9 +97,6 @@ unittest
 	import std.range : repeat;
 	assert(adler32Of(repeat('a', 1000000)) == x"15D870F9");
 }
-
-/// OOP API for Adler32.
-alias Adler32Digest = WrapperDigest!Adler32;
 
 ///
 unittest
