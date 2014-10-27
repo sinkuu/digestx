@@ -257,14 +257,13 @@ unittest
 }
 
 version (none)
-@safe pure nothrow
+pure nothrow @nogc
 unittest
 {
-	import std.array : array;
-	import std.range : repeat, take;
-	assert(hexDigest!Whirlpool(repeat('a').take(10 ^^ 6).array) ==
-		"0C99005BEB57EFF50A7CF005560DDF5D29057FD86B20BFD62DECA0F1CCEA4AF5" ~
-		"1FC15490EDDC47AF32BB2B66C34FF9AD8C6008AD677F77126953B226E4ED8B01");
+	import std.range : repeat;
+	assert(digest!Whirlpool(repeat('a', 10 ^^ 6)) ==
+		x"0C99005BEB57EFF50A7CF005560DDF5D29057FD86B20BFD62DECA0F1CCEA4AF5" ~
+		x"1FC15490EDDC47AF32BB2B66C34FF9AD8C6008AD677F77126953B226E4ED8B01");
 }
 
 pure nothrow @nogc
