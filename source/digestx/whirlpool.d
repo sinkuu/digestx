@@ -135,12 +135,11 @@ private:
 
 		// compute and apply K^0 to the cipher state
 		ulong[8] state = void;
+		state[] = block[] ^ hash[];
 
 		// iterate over all rounds
 		if (firstBlock) // use precompiled K[] for first block
 		{
-			state[] = block[] ^ hash[];
-
 			foreach (immutable k; pcK)
 			{
 				ulong[8] L = void;
@@ -153,7 +152,6 @@ private:
 		else
 		{
 			ulong[8] K = hash;
-			state[] = block[] ^ K[];
 
 			foreach (immutable rcr; rc[1 .. $])
 			{
