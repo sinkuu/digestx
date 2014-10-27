@@ -255,11 +255,12 @@ unittest
 		"16BDC8031BC5BE1B7B947639FE050B56939BAAA0ADFF9AE6745B7B181C3BE3FD");
 }
 
-pure nothrow @nogc
+pure nothrow
 unittest
 {
+	import std.array : array;
 	import std.range : repeat;
-	assert(digest!Whirlpool(repeat('a', 10 ^^ 6)) ==
+	assert(digest!Whirlpool(repeat('a', 10 ^^ 6).array) ==
 		x"0C99005BEB57EFF50A7CF005560DDF5D29057FD86B20BFD62DECA0F1CCEA4AF5" ~
 		x"1FC15490EDDC47AF32BB2B66C34FF9AD8C6008AD677F77126953B226E4ED8B01");
 }

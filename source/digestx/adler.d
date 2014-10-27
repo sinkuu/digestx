@@ -26,11 +26,11 @@ struct Adler32
 			{
 				_a %= 65521;
 				_b %= 65521;
-				_tlen = 5550;
+				_tlen = moduloInterval;
 			}
 		}
 
-		if (_tlen != 5550)
+		if (_tlen != moduloInterval)
 		{
 			_a %= 65521;
 			_b %= 65521;
@@ -57,7 +57,9 @@ struct Adler32
 private:
 
 	uint _a = 1, _b;
-	uint _tlen = 5550;
+	uint _tlen = moduloInterval;
+
+	enum moduloInterval = 5552;
 }
 
 //Convenience alias for $(D digest) function in std.digest.digest using the Adler32 implementation.
