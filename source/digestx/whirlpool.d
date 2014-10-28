@@ -7,7 +7,6 @@ module digestx.whirlpool;
 
 
 public import std.digest.digest;
-import std.traits;
 import std.range;
 
 
@@ -52,7 +51,7 @@ struct Whirlpool
 	}
 
 	// optimization for range
-	void put(R)(R r) @trusted pure nothrow @nogc
+	void put(R)(R r)
 		if (isInputRange!R && hasLength!R)
 	{
 		bufLength(r.length);
