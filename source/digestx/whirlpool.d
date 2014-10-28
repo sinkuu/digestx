@@ -7,6 +7,8 @@ module digestx.whirlpool;
 
 
 public import std.digest.digest;
+import std.traits;
+import std.range;
 
 
 /**
@@ -16,74 +18,78 @@ struct Whirlpool
 {
 	void start() @safe pure nothrow @nogc
 	{
-		bufferPos = 0;
-		hash[] = 0;
-		firstBlock = true;
-		bitLength[] = 0;
+		_lenBuf = 0;
+		_bufferPos = 0;
+		_hash[] = 0;
+		_firstBlock = true;
+		_bitLength[] = 0;
 	}
 
 	void put(scope const(ubyte)[] data...) @trusted pure nothrow @nogc
-	in
 	{
-		assert(data.length < ulong.max / 8);
-	}
-	body
-	{
-		ulong value = data.length * 8;
-		for (int i = 31, carry = 0; i >= 0; i--)
-		{
-			carry += bitLength[i] + (value & 0xFF);
-			bitLength[i] = cast(ubyte)carry;
-			carry >>>= 8;
-			value >>>= 8;
-		}
+		bufLength(data.length);
 
 		while (data.length > 0)
 		{
-			immutable cap = buffer.length - bufferPos;
+			immutable cap = _buffer.length - _bufferPos;
 			if (cap <= data.length)
 			{
-				buffer[bufferPos .. $] = data[0 .. cap];
-				bufferPos = buffer.length;
+				_buffer[_bufferPos .. $] = data[0 .. cap];
+				_bufferPos = _buffer.length;
 				processBuffer();
 
 				data = data[cap .. $];
 			}
 			else
 			{
-				buffer[bufferPos .. bufferPos + data.length] = data;
-				bufferPos += data.length;
-				assert(bufferPos < buffer.length);
+				_buffer[_bufferPos .. _bufferPos + data.length] = data;
+				_bufferPos += data.length;
+				assert(_bufferPos < _buffer.length);
 
 				data = null;
 			}
 		}
 	}
 
+	// optimization for range
+	void put(R)(R r) @trusted pure nothrow @nogc
+		if (isInputRange!R && hasLength!R)
+	{
+		bufLength(r.length);
+
+		foreach (immutable i; r)
+		{
+			_buffer[_bufferPos] = i;
+			_bufferPos++;
+			if (_bufferPos == _buffer.length) processBuffer();
+		}
+	}
+
 	ubyte[64] finish() @trusted pure nothrow @nogc
 	{
 		// append a '1'-bit
-		// As buffer is byte-wise in this implementation, no need to perform bit-op
-		buffer[bufferPos] = 0x80;
-		bufferPos++;
+		// As the buffer is byte-wise in this implementation, _buffer[_bufferPos] is not used yet.
+		_buffer[_bufferPos] = 0x80;
+		_bufferPos++;
 
-		if (bufferPos > 32)
+		if (_bufferPos > 32)
 		{
-			buffer[bufferPos .. $] = 0;
-			bufferPos = buffer.length;
+			_buffer[_bufferPos .. $] = 0;
+			_bufferPos = _buffer.length;
 			processBuffer();
 		}
 
-		if (bufferPos < 32) buffer[bufferPos .. 32] = 0;
-		buffer[32 .. $] = bitLength;
-		bufferPos = buffer.length;
+		if (_bufferPos < 32) _buffer[_bufferPos .. 32] = 0;
+		if (_lenBuf != 0) addLength(_lenBuf);
+		_buffer[32 .. $] = _bitLength;
+		_bufferPos = _buffer.length;
 		processBuffer();
 
 		ubyte[64] digest = void;
 
 		for (int i = 0, j = 0; i < 8; i++, j += 8)
 		{
-			immutable h = hash[i];
+			immutable h = _hash[i];
 			digest[j    ] = cast(ubyte)(h >> 56);
 			digest[j + 1] = cast(ubyte)(h >> 48);
 			digest[j + 2] = cast(ubyte)(h >> 40);
@@ -101,18 +107,51 @@ struct Whirlpool
 
 private:
 
-	ubyte[32] bitLength;
+	// buffers sum of data length and add into _bitLength when necessary
+	// to reduce bignum operation.
+	ulong _lenBuf;
 
-	ubyte[64] buffer = void;
-	size_t bufferPos;
+	void bufLength(ulong bytes) @safe pure nothrow @nogc
+	{
+		ulong sum = _lenBuf + bytes;
+		if (sum < _lenBuf || sum < bytes)
+		{
+			addLength(_lenBuf);
+			_lenBuf = bytes;
+		}
+		else
+		{
+			_lenBuf = sum;
+		}
+	}
 
-	ulong[8] hash;
+	ubyte[32] _bitLength;
 
-	bool firstBlock = true;
+	void addLength(ulong bytes) @trusted pure nothrow @nogc
+	{
+		uint carry = _bitLength[31] + ((bytes << 3) & 0xFF);
+		_bitLength[31] = cast(ubyte)carry;
+		carry >>= 8;
+		bytes >>= 5;
+		for (int i = 30; i >= 0; i--)
+		{
+			carry += _bitLength[i] + (bytes & 0xFF);
+			_bitLength[i] = cast(ubyte)carry;
+			carry >>>= 8;
+			bytes >>= 8;
+		}
+	}
+
+	ubyte[64] _buffer = void;
+	size_t _bufferPos;
+
+	ulong[8] _hash;
+
+	bool _firstBlock = true;
 
 	void processBuffer() @trusted pure nothrow @nogc
 	{
-		assert(bufferPos == 64);
+		assert(_bufferPos == 64);
 
 		ulong[8] block = void;
 
@@ -120,22 +159,22 @@ private:
 		for (int i = 0, j = 0; i < 8; i++, j += 8)
 		{
 			block[i] =
-				((cast(ulong)buffer[j    ]       ) << 56) ^
-				((cast(ulong)buffer[j + 1] & 0xFF) << 48) ^
-				((cast(ulong)buffer[j + 2] & 0xFF) << 40) ^
-				((cast(ulong)buffer[j + 3] & 0xFF) << 32) ^
-				((cast(ulong)buffer[j + 4] & 0xFF) << 24) ^
-				((cast(ulong)buffer[j + 5] & 0xFF) << 16) ^
-				((cast(ulong)buffer[j + 6] & 0xFF) <<  8) ^
-				((cast(ulong)buffer[j + 7] & 0xFF)      );
+				((cast(ulong)_buffer[j    ]       ) << 56) ^
+				((cast(ulong)_buffer[j + 1] & 0xFF) << 48) ^
+				((cast(ulong)_buffer[j + 2] & 0xFF) << 40) ^
+				((cast(ulong)_buffer[j + 3] & 0xFF) << 32) ^
+				((cast(ulong)_buffer[j + 4] & 0xFF) << 24) ^
+				((cast(ulong)_buffer[j + 5] & 0xFF) << 16) ^
+				((cast(ulong)_buffer[j + 6] & 0xFF) <<  8) ^
+				((cast(ulong)_buffer[j + 7] & 0xFF)      );
 		}
 
 		// compute and apply K^0 to the cipher state
 		ulong[8] state = void;
-		state[] = block[] ^ hash[];
+		state[] = block[] ^ _hash[];
 
 		// iterate over all rounds
-		if (firstBlock) // use precompiled K[] for first block
+		if (_firstBlock) // use precompiled K[] for first block
 		{
 			foreach (immutable k; pcK)
 			{
@@ -144,11 +183,11 @@ private:
 				state[] = L[] ^ k[];
 			}
 
-			firstBlock = false;
+			_firstBlock = false;
 		}
 		else
 		{
-			ulong[8] K = hash;
+			ulong[8] K = _hash;
 
 			foreach (immutable rcr; rc)
 			{
@@ -168,9 +207,9 @@ private:
 		}
 
 		// apply the Miyaguchi-Preneel compression function:
-		hash[] ^= state[] ^ block[];
+		_hash[] ^= state[] ^ block[];
 
-		bufferPos = 0;
+		_bufferPos = 0;
 	}
 }
 
@@ -255,12 +294,11 @@ unittest
 		"16BDC8031BC5BE1B7B947639FE050B56939BAAA0ADFF9AE6745B7B181C3BE3FD");
 }
 
-pure nothrow
+pure nothrow @nogc
 unittest
 {
-	import std.array : array;
 	import std.range : repeat;
-	assert(digest!Whirlpool(repeat('a', 10 ^^ 6).array) ==
+	assert(digest!Whirlpool(repeat('a', 10 ^^ 6)) ==
 		x"0C99005BEB57EFF50A7CF005560DDF5D29057FD86B20BFD62DECA0F1CCEA4AF5" ~
 		x"1FC15490EDDC47AF32BB2B66C34FF9AD8C6008AD677F77126953B226E4ED8B01");
 }
