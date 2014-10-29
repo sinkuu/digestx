@@ -1,5 +1,6 @@
 {
 	"name": "digestx",
 	"description": "Additional hash algorithms with APIs conforming to std.digest",
+	"license": "public domain",
 	"targetType": "library"
 }
