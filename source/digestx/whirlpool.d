@@ -34,8 +34,8 @@ struct Whirlpool
 			if (cap <= data.length)
 			{
 				_buffer[_bufferPos .. $] = data[0 .. cap];
-				_bufferPos = _buffer.length;
 				processBuffer();
+				_bufferPos = 0;
 
 				data = data[cap .. $];
 			}
@@ -43,16 +43,13 @@ struct Whirlpool
 			{
 				_buffer[_bufferPos .. _bufferPos + data.length] = data;
 				_bufferPos += data.length;
-				assert(_bufferPos < _buffer.length);
 
 				data = null;
 			}
 		}
 	}
 
-	// optimization for range
-	void put(R)(R r)
-		if (isInputRange!R && hasLength!R)
+	void put(R)(R r) if (isInputRange!R && hasLength!R)
 	{
 		bufLength(r.length);
 
@@ -60,7 +57,11 @@ struct Whirlpool
 		{
 			_buffer[_bufferPos] = i;
 			_bufferPos++;
-			if (_bufferPos == _buffer.length) processBuffer();
+			if (_bufferPos == _buffer.length)
+			{
+				processBuffer();
+				_bufferPos = 0;
+			}
 		}
 	}
 
@@ -74,14 +75,13 @@ struct Whirlpool
 		if (_bufferPos > 32)
 		{
 			_buffer[_bufferPos .. $] = 0;
-			_bufferPos = _buffer.length;
 			processBuffer();
+			_bufferPos = 0;
 		}
 
 		if (_bufferPos < 32) _buffer[_bufferPos .. 32] = 0;
 		if (_lenBuf != 0) addLength(_lenBuf);
 		_buffer[32 .. $] = _bitLength;
-		_bufferPos = _buffer.length;
 		processBuffer();
 
 		ubyte[64] digest = void;
@@ -136,7 +136,7 @@ private:
 		{
 			carry += _bitLength[i] + (bytes & 0xFF);
 			_bitLength[i] = cast(ubyte)carry;
-			carry >>>= 8;
+			carry >>= 8;
 			bytes >>= 8;
 		}
 	}
@@ -150,8 +150,6 @@ private:
 
 	void processBuffer() @trusted pure nothrow @nogc
 	{
-		assert(_bufferPos == 64);
-
 		ulong[8] block = void;
 
 		// map the buffer to a block
@@ -207,8 +205,6 @@ private:
 
 		// apply the Miyaguchi-Preneel compression function:
 		_hash[] ^= state[] ^ block[];
-
-		_bufferPos = 0;
 	}
 }
 
@@ -253,44 +249,44 @@ unittest
 {
 	static assert(isDigest!Whirlpool);
 
-	assert(hexDigest!Whirlpool("The quick brown fox jumps over the lazy dog") ==
-		"B97DE512E91E3828B40D2B0FDCE9CEB3C4A71F9BEA8D88E75C4FA854DF36725F" ~
-		"D2B52EB6544EDCACD6F8BEDDFEA403CB55AE31F03AD62A5EF54E42EE82C3FB35");
+	assert(digest!Whirlpool("The quick brown fox jumps over the lazy dog") ==
+		x"B97DE512E91E3828B40D2B0FDCE9CEB3C4A71F9BEA8D88E75C4FA854DF36725F" ~
+		x"D2B52EB6544EDCACD6F8BEDDFEA403CB55AE31F03AD62A5EF54E42EE82C3FB35");
 
 	// ISO test vectors
 
-	assert(hexDigest!Whirlpool("") ==
-		"19FA61D75522A4669B44E39C1D2E1726C530232130D407F89AFEE0964997F7A7" ~
-		"3E83BE698B288FEBCF88E3E03C4F0757EA8964E59B63D93708B138CC42A66EB3");
+	assert(digest!Whirlpool("") ==
+		x"19FA61D75522A4669B44E39C1D2E1726C530232130D407F89AFEE0964997F7A7" ~
+		x"3E83BE698B288FEBCF88E3E03C4F0757EA8964E59B63D93708B138CC42A66EB3");
 
-	assert(hexDigest!Whirlpool("a") ==
-		"8ACA2602792AEC6F11A67206531FB7D7F0DFF59413145E6973C45001D0087B42" ~
-		"D11BC645413AEFF63A42391A39145A591A92200D560195E53B478584FDAE231A");
+	assert(digest!Whirlpool("a") ==
+		x"8ACA2602792AEC6F11A67206531FB7D7F0DFF59413145E6973C45001D0087B42" ~
+		x"D11BC645413AEFF63A42391A39145A591A92200D560195E53B478584FDAE231A");
 
-	assert(hexDigest!Whirlpool("abc") ==
-		"4E2448A4C6F486BB16B6562C73B4020BF3043E3A731BCE721AE1B303D97E6D4C" ~
-		"7181EEBDB6C57E277D0E34957114CBD6C797FC9D95D8B582D225292076D4EEF5");
+	assert(digest!Whirlpool("abc") ==
+		x"4E2448A4C6F486BB16B6562C73B4020BF3043E3A731BCE721AE1B303D97E6D4C" ~
+		x"7181EEBDB6C57E277D0E34957114CBD6C797FC9D95D8B582D225292076D4EEF5");
 
-	assert(hexDigest!Whirlpool("message digest") ==
-		"378C84A4126E2DC6E56DCC7458377AAC838D00032230F53CE1F5700C0FFB4D3B" ~
-		"8421557659EF55C106B4B52AC5A4AAA692ED920052838F3362E86DBD37A8903E");
+	assert(digest!Whirlpool("message digest") ==
+		x"378C84A4126E2DC6E56DCC7458377AAC838D00032230F53CE1F5700C0FFB4D3B" ~
+		x"8421557659EF55C106B4B52AC5A4AAA692ED920052838F3362E86DBD37A8903E");
 
-	assert(hexDigest!Whirlpool("abcdefghijklmnopqrstuvwxyz") ==
-		"F1D754662636FFE92C82EBB9212A484A8D38631EAD4238F5442EE13B8054E41B" ~
-		"08BF2A9251C30B6A0B8AAE86177AB4A6F68F673E7207865D5D9819A3DBA4EB3B");
+	assert(digest!Whirlpool("abcdefghijklmnopqrstuvwxyz") ==
+		x"F1D754662636FFE92C82EBB9212A484A8D38631EAD4238F5442EE13B8054E41B" ~
+		x"08BF2A9251C30B6A0B8AAE86177AB4A6F68F673E7207865D5D9819A3DBA4EB3B");
 
-	assert(hexDigest!Whirlpool("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") ==
-		"DC37E008CF9EE69BF11F00ED9ABA26901DD7C28CDEC066CC6AF42E40F82F3A1E" ~
-		"08EBA26629129D8FB7CB57211B9281A65517CC879D7B962142C65F5A7AF01467");
+	assert(digest!Whirlpool("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") ==
+		x"DC37E008CF9EE69BF11F00ED9ABA26901DD7C28CDEC066CC6AF42E40F82F3A1E" ~
+		x"08EBA26629129D8FB7CB57211B9281A65517CC879D7B962142C65F5A7AF01467");
 
-	assert(hexDigest!Whirlpool("1234567890123456789012345678901234567890" ~
+	assert(digest!Whirlpool("1234567890123456789012345678901234567890" ~
 				"1234567890123456789012345678901234567890") ==
-		"466EF18BABB0154D25B9D38A6414F5C08784372BCCB204D6549C4AFADB601429" ~
-		"4D5BD8DF2A6C44E538CD047B2681A51A2C60481E88C5A20B2C2A80CF3A9A083B");
+		x"466EF18BABB0154D25B9D38A6414F5C08784372BCCB204D6549C4AFADB601429" ~
+		x"4D5BD8DF2A6C44E538CD047B2681A51A2C60481E88C5A20B2C2A80CF3A9A083B");
 
-	assert(hexDigest!Whirlpool("abcdbcdecdefdefgefghfghighijhijk") ==
-		"2A987EA40F917061F5D6F0A0E4644F488A7A5A52DEEE656207C562F988E95C69" ~
-		"16BDC8031BC5BE1B7B947639FE050B56939BAAA0ADFF9AE6745B7B181C3BE3FD");
+	assert(digest!Whirlpool("abcdbcdecdefdefgefghfghighijhijk") ==
+		x"2A987EA40F917061F5D6F0A0E4644F488A7A5A52DEEE656207C562F988E95C69" ~
+		x"16BDC8031BC5BE1B7B947639FE050B56939BAAA0ADFF9AE6745B7B181C3BE3FD");
 }
 
 pure nothrow @nogc
