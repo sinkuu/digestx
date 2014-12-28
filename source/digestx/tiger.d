@@ -12,7 +12,9 @@ public import std.digest.digest;
 
 	Parameters:
 		digestSize = the size of digest in byte
+
 		passes = the number of passes of the digest algorithm
+
 		tiger2 = tiger2 mode (uses 0x80 as padding value)
 */
 struct TigerImpl(uint digestSize, uint passes, bool tiger2 = false)
