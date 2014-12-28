@@ -112,11 +112,32 @@ unittest
 	assert(d == x"FDC422FD");
 }
 
+/// Convenience aliases for std.digest.digest.digest using the FNV implementation.
+auto fnv32Of(T...)(T data)
+{
+	return digest!(FNV32, T)(data);
+}
+/// ditto
+auto fnv64Of(T...)(T data)
+{
+	return digest!(FNV64, T)(data);
+}
+/// ditto
+auto fnv32aOf(T...)(T data)
+{
+	return digest!(FNV32A, T)(data);
+}
+/// ditto
+auto fnv64aOf(T...)(T data)
+{
+	return digest!(FNV64A, T)(data);
+}
+
 @safe pure nothrow @nogc
 unittest
 {
-	assert(digest!FNV32("") == x"811C9DC5");
-	assert(digest!FNV64("") == x"CBF29CE484222325");
-	assert(digest!FNV32A("") == x"811C9DC5");
-	assert(digest!FNV64A("") == x"CBF29CE484222325");
+	assert(fnv32Of("") == x"811C9DC5");
+	assert(fnv64Of("") == x"CBF29CE484222325");
+	assert(fnv32aOf("") == x"811C9DC5");
+	assert(fnv64aOf("") == x"CBF29CE484222325");
 }
