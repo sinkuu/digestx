@@ -1,6 +1,6 @@
 # digestx
 
-A hash library for [D](http://dlang.org/) language, with Phobos(std.digest) compatible APIs.
+A hash library for [D language](http://dlang.org/), with Phobos(std.digest) compatible APIs.
 
 
 ## Supported Hash Algorithms
