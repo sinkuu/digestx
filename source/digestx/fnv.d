@@ -15,7 +15,7 @@ struct FNV(ulong bitLength, bool fnv1a = false)
 	/// Initializes the digest calculation.
 	void start() @safe pure nothrow @nogc
 	{
-		this = this.init;
+		_hash = fnvOffsetBasis;
 	}
 
 	/// Feeds the digest with data.
@@ -79,7 +79,7 @@ private:
 	import std.traits : Unqual;
 	alias IntType = Unqual!(typeof(fnvPrime));
 
-	IntType _hash = fnvOffsetBasis;
+	IntType _hash = void;
 }
 
 alias FNV32 = FNV!32; /// 32bit FNV-1, hash size is ubyte[4]
@@ -98,6 +98,7 @@ unittest
 	import digestx.fnv;
 
 	FNV64 fnv64;
+	fnv64.start();
 	fnv64.put(cast(ubyte[])"hello");
 	assert(toHexString(fnv64.finish()) == "7B495389BDBDD4C7");
 
@@ -106,8 +107,6 @@ unittest
 	assert(digest!FNV64("abc") == x"D8DCCA186BAFADCB");
 	assert(digest!FNV32A("abc") == x"1A47E90B");
 	assert(digest!FNV64A("abc") == x"E71FA2190541574B");
-	
-	assert(digest!FNV64("hello") == fnv64.finish());
 
 	// OOP API
 	Digest fnv = new FNV32ADigest;

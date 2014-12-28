@@ -12,7 +12,9 @@ struct Adler32
 	/// Initializes the digest calculation.
 	void start() @safe pure nothrow @nogc
 	{
-		this = this.init;
+		_a = 1;
+		_b = 0;
+		_tlen = moduloInterval;
 	}
 
 	/// Feeds the digest with data.
@@ -59,8 +61,8 @@ struct Adler32
 
 private:
 
-	uint _a = 1, _b;
-	uint _tlen = moduloInterval;
+	uint _a = void, _b = void;
+	uint _tlen = void;
 
 	enum moduloInterval = 5552;
 }
@@ -78,6 +80,7 @@ alias Adler32Digest = WrapperDigest!Adler32;
 unittest
 {
 	Adler32 adler;
+	adler.start();
 	adler.put(cast(ubyte[])"abc");
 	assert(adler.finish() == x"024d0127");
 	adler.start();
