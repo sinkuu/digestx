@@ -12,11 +12,13 @@ public import std.digest.digest;
  */
 struct FNV(ulong bitLength, bool fnv1a = false)
 {
+	/// Initializes the digest calculation.
 	void start() @safe pure nothrow @nogc
 	{
 		this = this.init;
 	}
 
+	/// Feeds the digest with data.
 	void put(scope const(ubyte)[] data...) @trusted pure nothrow @nogc
 	{
 		foreach (immutable ubyte i; data)
@@ -34,6 +36,7 @@ struct FNV(ulong bitLength, bool fnv1a = false)
 		}
 	}
 
+	/// Returns the finished FNV digest. This also calls start to reset the internal state.
 	ubyte[bitLength / 8] finish() const @trusted pure nothrow @nogc
 	{
 		import std.bitmanip : nativeToBigEndian;

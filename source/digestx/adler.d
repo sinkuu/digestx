@@ -9,11 +9,13 @@ public import std.digest.digest;
 
 struct Adler32
 {
+	/// Initializes the digest calculation.
 	void start() @safe pure nothrow @nogc
 	{
 		this = this.init;
 	}
 
+	/// Feeds the digest with data.
 	void put(scope const(ubyte)[] data...) @trusted pure nothrow @nogc
 	{
 		foreach (immutable ubyte i; data)
@@ -37,6 +39,7 @@ struct Adler32
 		}
 	}
 
+	/// Returns the finished Adler-32 digest. This also calls start to reset the internal state.
 	ubyte[4] finish() const @trusted pure nothrow @nogc
 	{
 		import std.bitmanip : nativeToBigEndian;
