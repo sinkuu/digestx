@@ -37,19 +37,23 @@ struct FNV(ulong bitLength, bool fnv1a = false)
 	}
 
 	/// Returns the finished FNV digest. This also calls start to reset the internal state.
-	ubyte[bitLength / 8] finish() const @trusted pure nothrow @nogc
+	ubyte[bitLength / 8] finish() @trusted pure nothrow @nogc
 	{
 		import std.bitmanip : nativeToBigEndian;
 
+		auto hash = _hash;
+
+		start();
+
 		static if (__VERSION__ < 2067)
 		{
-			// Phobos bug: std.bitmanip.nativeToBigEndian is not annotated with @nogc
+			// Phobos BUG: std.bitmanip.nativeToBigEndian is not annotated with @nogc
 			return (cast(ubyte[bitLength / 8] function(IntType) @safe pure nothrow @nogc)
-					&nativeToBigEndian!IntType)(_hash);
+					&nativeToBigEndian!IntType)(hash);
 		}
 		else
 		{
-			return nativeToBigEndian(_hash);
+			return nativeToBigEndian(hash);
 		}
 	}
 

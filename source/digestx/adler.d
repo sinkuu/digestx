@@ -42,21 +42,24 @@ struct Adler32
 	}
 
 	/// Returns the finished Adler-32 digest. This also calls start to reset the internal state.
-	ubyte[4] finish() const @trusted pure nothrow @nogc
+	ubyte[4] finish() @trusted pure nothrow @nogc
 	{
 		import std.bitmanip : nativeToBigEndian;
+
+		auto a = _a, b = _b;
+
+		start();
 
 		static if (__VERSION__ < 2067)
 		{
 			// Phobos bug: std.bitmanip.nativeToBigEndian is not annotated with @nogc
-			auto r = (cast(ubyte[4] function(uint) @safe pure nothrow @nogc)&nativeToBigEndian!uint)
-				((_b << 16) | _a);
+			return (cast(ubyte[4] function(uint) @safe pure nothrow @nogc)&nativeToBigEndian!uint)
+				((b << 16) | a);
 		}
 		else
 		{
-			auto r = nativeToBigEndian((_b << 16) | _a);
+			return nativeToBigEndian((b << 16) | a);
 		}
-		return r;
 	}
 
 private:
