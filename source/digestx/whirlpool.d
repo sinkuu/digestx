@@ -15,6 +15,7 @@ import std.range;
   */
 struct Whirlpool
 {
+	/// Initializes the digest calculation.
 	void start() @safe pure nothrow @nogc
 	{
 		_lenBuf = 0;
@@ -24,6 +25,7 @@ struct Whirlpool
 		_bitLength[] = 0;
 	}
 
+	/// Feed the digest with data.
 	void put(scope const(ubyte)[] data...) @trusted pure nothrow @nogc
 	{
 		bufLength(data.length);
@@ -65,6 +67,7 @@ struct Whirlpool
 		}
 	}
 
+	/// Returns the Whirlpool hash. This also calls start() to reset the internal state.
 	ubyte[64] finish() @trusted pure nothrow @nogc
 	{
 		// append a '1'-bit
@@ -106,7 +109,7 @@ struct Whirlpool
 
 private:
 
-	// buffers sum of data length and add into _bitLength when necessary
+	// buffers sum of data length and add into _bitLength when necessary,
 	// to reduce bignum operation.
 	ulong _lenBuf;
 
@@ -209,9 +212,9 @@ private:
 }
 
 /// Convenience alias for digest function in std.digest.digest using the Whirlpool implementation.
-auto whirlpoolOf(T...)(T datas)
+auto whirlpoolOf(T...)(T data)
 {
-	return digest!(Whirlpool, T)(datas);
+	return digest!(Whirlpool, T)(data);
 }
 
 /// OOP API for Whirlpool
