@@ -111,7 +111,7 @@ private:
 
 	// buffers sum of data length and add into _bitLength when necessary,
 	// to reduce bignum operation.
-	ulong _lenBuf;
+	ulong _lenBuf = void;
 
 	void bufLength(ulong bytes) @safe pure nothrow @nogc
 	{
@@ -127,7 +127,7 @@ private:
 		}
 	}
 
-	ubyte[32] _bitLength;
+	ubyte[32] _bitLength = void;
 
 	void addLength(ulong bytes) @trusted pure nothrow @nogc
 	{
@@ -145,9 +145,9 @@ private:
 	}
 
 	ubyte[64] _buffer = void;
-	size_t _bufferPos;
+	size_t _bufferPos = void;
 
-	ulong[8] _hash;
+	ulong[8] _hash = void;
 
 	bool _firstBlock = true;
 
