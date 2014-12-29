@@ -81,12 +81,17 @@ struct TigerImpl(uint digestSize, uint passes, bool tiger2 = false)
 
 			if (_bufPos > 56)
 			{
-				u.temp[_bufPos .. $] = 0;
+				assert(_bufPos == 64);
+				//u.temp[_bufPos .. $] = 0;
 				tigerCompress(u.tempUL);
 				_bufPos = 0;
+				u.tempUL[0 .. 7] = 0;
+			}
+			else
+			{
+				u.temp[_bufPos .. 56] = 0;
 			}
 
-			u.temp[_bufPos .. 56] = 0;
 			u.tempUL[7] = _length << 3;
 			tigerCompress(u.tempUL);
 		}
@@ -99,12 +104,18 @@ struct TigerImpl(uint digestSize, uint passes, bool tiger2 = false)
 
 			if (_bufPos > 56)
 			{
-				_buf[_bufPos .. $] = 0;
+				assert(_bufPos == 64);
+				//_buf[_bufPos .. $] = 0;
 				tigerCompress(_bufUL);
 				_bufPos = 0;
+
+				_bufUL[0 .. 7] = 0;
+			}
+			else
+			{
+				_buf[_bufPos .. 56] = 0;
 			}
 
-			_buf[_bufPos .. 56] = 0;
 			_bufUL[7] = _length << 3;
 			tigerCompress(_bufUL);
 		}
@@ -122,6 +133,7 @@ struct TigerImpl(uint digestSize, uint passes, bool tiger2 = false)
 	}
 
 private:
+
 	union
 	{
 		ubyte[64] _buf = void;
@@ -129,28 +141,6 @@ private:
 	}
 
 	int _bufPos = void;
-
-	void processBuffer()
-	{
-		version (BigEndian)
-		{
-			union U
-			{
-				ubyte[64] temp;
-				ulong[8]  tempUL;
-			}
-
-			U u = void;
-
-			foreach (immutable i, immutable b; _buf) u.temp[i^7] = b;
-
-			tigerCompress(u.tempUL);
-		}
-		else
-		{
-			tigerCompress(_bufUL);
-		}
-	}
 
 	void tigerCompress(ref ulong[8] str) @safe pure nothrow @nogc
 	{
@@ -289,17 +279,17 @@ auto tigerOf(T...)(T data)
 	return digest!(Tiger, T)(data);
 }
 
-/// Convenience alias for std.digest.digest using Tiger2-192.
-auto tiger2Of(T...)(T data)
-{
-	return digest!(Tiger2, T)(data);
-}
-
 ///
 @safe pure nothrow @nogc
 unittest
 {
 	assert(tigerOf("abc") == x"2AAB1484E8C158F2BFB8C5FF41B57A525129131C957B5F93");
+}
+
+/// Convenience alias for std.digest.digest using Tiger2-192.
+auto tiger2Of(T...)(T data)
+{
+	return digest!(Tiger2, T)(data);
 }
 
 pure nothrow @nogc
@@ -335,7 +325,7 @@ unittest
 	import std.range : repeat;
 	assert(tigerOf(repeat('a', 10 ^^ 6)) == 
 			x"6DB0E2729CBEAD93D715C6A7D36302E9B3CEE0D2BC314B41");
-	assert(digest!Tiger2(repeat('a', 10 ^^ 6)) ==
+	assert(tiger2Of(repeat('a', 10 ^^ 6)) ==
 			x"E068281F060F551628CC5715B9D0226796914D45F7717CF4");
 }
 
