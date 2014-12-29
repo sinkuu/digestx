@@ -67,7 +67,7 @@ struct Whirlpool
 		}
 	}
 
-	/// Returns the Whirlpool hash. This also calls start() to reset the internal state.
+	/// Returns the Whirlpool hash. This also calls start to reset the internal state.
 	ubyte[64] finish() @trusted pure nothrow @nogc
 	{
 		// append a '1'-bit
