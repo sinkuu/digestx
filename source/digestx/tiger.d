@@ -35,7 +35,7 @@ struct TigerImpl(uint digestSize, uint passes, bool tiger2 = false)
 		assert(data.length <= ulong.max - _length, "length overflow");
 		_length += data.length;
 
-		while (data.length > 0)
+		while (true)
 		{
 			immutable cap = _buf.length - _bufPos;
 
@@ -52,6 +52,7 @@ struct TigerImpl(uint digestSize, uint passes, bool tiger2 = false)
 					= data[0 .. $];
 				_bufPos += data.length;
 				data = null;
+				break;
 			}
 		}
 	}

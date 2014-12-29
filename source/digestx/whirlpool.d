@@ -30,7 +30,7 @@ struct Whirlpool
 	{
 		bufLength(data.length);
 
-		while (data.length > 0)
+		while (true)
 		{
 			immutable cap = _buffer.length - _bufferPos;
 			if (cap <= data.length)
@@ -47,6 +47,7 @@ struct Whirlpool
 				_bufferPos += data.length;
 
 				data = null;
+				break;
 			}
 		}
 	}
@@ -159,14 +160,14 @@ private:
 		for (int i = 0, j = 0; i < 8; i++, j += 8)
 		{
 			block[i] =
-				((cast(ulong)_buffer[j    ]       ) << 56) ^
-				((cast(ulong)_buffer[j + 1] & 0xFF) << 48) ^
-				((cast(ulong)_buffer[j + 2] & 0xFF) << 40) ^
-				((cast(ulong)_buffer[j + 3] & 0xFF) << 32) ^
-				((cast(ulong)_buffer[j + 4] & 0xFF) << 24) ^
-				((cast(ulong)_buffer[j + 5] & 0xFF) << 16) ^
-				((cast(ulong)_buffer[j + 6] & 0xFF) <<  8) ^
-				((cast(ulong)_buffer[j + 7] & 0xFF)      );
+				(cast(ulong)_buffer[j    ] << 56) ^
+				(cast(ulong)_buffer[j + 1] << 48) ^
+				(cast(ulong)_buffer[j + 2] << 40) ^
+				(cast(ulong)_buffer[j + 3] << 32) ^
+				(cast(ulong)_buffer[j + 4] << 24) ^
+				(cast(ulong)_buffer[j + 5] << 16) ^
+				(cast(ulong)_buffer[j + 6] <<  8) ^
+				(cast(ulong)_buffer[j + 7]      );
 		}
 
 		// compute and apply K^0 to the cipher state
