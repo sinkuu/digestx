@@ -167,14 +167,14 @@ private:
 				x1 ^= x0;
 				x2 += x1;
 				x3 -= x2 ^ ((~x1) << 19);
-				x4 ^= x3; 
-				x5 += x4; 
+				x4 ^= x3;
+				x5 += x4;
 				x6 -= x5 ^ ((~x4) >> 23);
-				x7 ^= x6; 
-				x0 += x7; 
+				x7 ^= x6;
+				x0 += x7;
 				x1 -= x0 ^ ((~x7) << 19);
-				x2 ^= x1; 
-				x3 += x2; 
+				x2 ^= x1;
+				x3 += x2;
 				x4 -= x3 ^ ((~x2) >> 23);
 				x5 ^= x4;
 				x6 += x5;
@@ -324,7 +324,7 @@ unittest
 			x"D85278115329EBAA0EEC85ECDC5396FDA8AA3A5820942FFF");
 
 	import std.range : repeat;
-	assert(tigerOf(repeat('a', 10 ^^ 6)) == 
+	assert(tigerOf(repeat('a', 10 ^^ 6)) ==
 			x"6DB0E2729CBEAD93D715C6A7D36302E9B3CEE0D2BC314B41");
 	assert(tiger2Of(repeat('a', 10 ^^ 6)) ==
 			x"E068281F060F551628CC5715B9D0226796914D45F7717CF4");
