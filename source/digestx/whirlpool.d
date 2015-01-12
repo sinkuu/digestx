@@ -21,7 +21,7 @@ struct Whirlpool
 		_lenBuf = 0;
 		_bufferPos = 0;
 		_hash[] = 0;
-		_firstBlock = true;
+		_tailBlock = false;
 		_bitLength[] = 0;
 	}
 
@@ -150,7 +150,7 @@ private:
 
 	ulong[8] _hash = void;
 
-	bool _firstBlock = true;
+	bool _tailBlock;
 
 	void processBuffer() @trusted pure nothrow @nogc
 	{
@@ -175,18 +175,7 @@ private:
 		state[] = block[] ^ _hash[];
 
 		// iterate over all rounds
-		if (_firstBlock) // use precompiled K[] for first block
-		{
-			foreach (immutable k; pcK)
-			{
-				ulong[8] L = void;
-				mixin(genTransform("L", "state"));
-				state[] = L[] ^ k[];
-			}
-
-			_firstBlock = false;
-		}
-		else
+		if (_tailBlock) // not the first block
 		{
 			ulong[8] K = _hash;
 
@@ -205,6 +194,17 @@ private:
 
 				state[] = L[] ^ K[];
 			}
+		}
+		else // use precompiled K[] for first block
+		{
+			foreach (immutable k; pcK)
+			{
+				ulong[8] L = void;
+				mixin(genTransform("L", "state"));
+				state[] = L[] ^ k[];
+			}
+
+			_tailBlock = true;
 		}
 
 		// apply the Miyaguchi-Preneel compression function:
