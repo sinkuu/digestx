@@ -339,7 +339,7 @@ string genTransform(string assignTo, string from)
 
 
 // number of rounds
-immutable int R = 10;
+enum int numRounds = 10;
 
 
 // circulant table
@@ -865,7 +865,7 @@ immutable ulong[256][8] C = [[
 	0x28a0285d88507528UL, 0x5c6d5cda31b8865cUL, 0xf8c7f8933fed6bf8UL, 0x86228644a411c286UL,
 ]];
 
-immutable ulong[R] rc = [
+immutable ulong[numRounds] rc = [
 	0x1823c6e887b8014fUL,
 	0x36a6d2f5796f9152UL,
 	0x60bc9b8ea30c7b35UL,
@@ -879,7 +879,7 @@ immutable ulong[R] rc = [
 ];
 
 // precomputed K[] based on the initial state
-immutable ulong[8][R] pcK = [
+immutable ulong[8][numRounds] pcK = [
 	[0x300BEEC0AF902967, 0x2828282828282828, 0x2828282828282828, 0x2828282828282828,
 	0x2828282828282828, 0x2828282828282828, 0x2828282828282828, 0x2828282828282828],
 	[0x3BAB89F8EAD1AE24, 0x4445456645E9CBAF, 0x70FEA4A4C5A4B289, 0xC5FAA9E1E1CCE1A0,
