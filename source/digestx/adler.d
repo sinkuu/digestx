@@ -7,6 +7,7 @@ module digestx.adler;
 public import std.digest.digest;
 
 
+/// Template API Adler32 implementation.
 struct Adler32
 {
 	/// Initializes the digest calculation.
@@ -70,7 +71,19 @@ private:
 	enum moduloInterval = 5552;
 }
 
-//Convenience alias for $(D digest) function in std.digest.digest using the Adler32 implementation.
+///
+unittest
+{
+	Adler32 adler;
+	adler.start();
+	adler.put(cast(ubyte[])"abc");
+	assert(adler.finish() == x"024d0127");
+	adler.start();
+	adler.put(cast(ubyte[])"def");
+	assert(adler.finish() == x"025F0130");
+}
+
+/// Convenience alias for $(D digest) function in std.digest.digest using the Adler32 implementation.
 auto adler32Of(T...)(T data)
 {
 	return digest!(Adler32, T)(data);
@@ -82,15 +95,8 @@ alias Adler32Digest = WrapperDigest!Adler32;
 ///
 unittest
 {
-	Adler32 adler;
-	adler.start();
-	adler.put(cast(ubyte[])"abc");
-	assert(adler.finish() == x"024d0127");
-	adler.start();
-	adler.put(cast(ubyte[])"def");
-	assert(adler.finish() == x"025F0130");
-
-	assert(adler32Of("abc") == x"024d0127");
+	auto adler = new Adler32Digest;
+	assert(adler.digest("abc") == x"024d0127");
 }
 
 @safe pure nothrow @nogc
@@ -109,9 +115,3 @@ unittest
 	assert(adler32Of(repeat('a', 1000000)) == x"15D870F9");
 }
 
-///
-unittest
-{
-	auto adler = new Adler32Digest;
-	assert(adler.digest("abc") == x"024d0127");
-}
