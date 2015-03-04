@@ -211,16 +211,16 @@ private:
 
 /// Alias for Tiger-192(3 pass), result is ubyte[24]
 alias Tiger = TigerImpl!(24, 3);
-/// Alias for Tiger-160(3 pass), result is ubyte[20](first 20 bytes of Tiger-192)
+/// Alias for Tiger-160(3 pass), result is ubyte[20] (first 20 bytes of Tiger-192)
 alias Tiger160 = TigerImpl!(20, 3);
-/// Alias for Tiger-128(3 pass), result is ubyte[16](first 16 bytes of Tiger-192)
+/// Alias for Tiger-128(3 pass), result is ubyte[16] (first 16 bytes of Tiger-192)
 alias Tiger128 = TigerImpl!(16, 3);
 
 /// Alias for Tiger2-192(3 pass), result is ubyte[24]
 alias Tiger2 = TigerImpl!(24, 3, true);
-/// Alias for Tiger2-160(3 pass), result is ubyte[20](first 20 bytes of Tiger-192)
+/// Alias for Tiger2-160(3 pass), result is ubyte[20] (first 20 bytes of Tiger-192)
 alias Tiger2_160 = TigerImpl!(20, 3, true);
-/// Alias for Tiger2-128(3 pass), result is ubyte[16](first 16 bytes of Tiger-192)
+/// Alias for Tiger2-128(3 pass), result is ubyte[16] (first 16 bytes of Tiger-192)
 alias Tiger2_128 = TigerImpl!(16, 3, true);
 
 /// OOP API for Tiger-192(3 pass)
